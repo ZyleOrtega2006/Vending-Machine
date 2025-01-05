@@ -1,0 +1,83 @@
+# ORIGINAL
+
+import pyttsx3
+import sqlite3
+from playsound import playsound
+
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)
+# This part of the code is for the text to speach program that allows me to utilize the system voice.
+
+def speak(audio): # We define this function so that in future purposes we can just call this function.
+    engine.say(audio)
+    engine.runAndWait()
+    # 
+conn = sqlite3.connect('Vending Machine Database.db')
+# Connects the database to the program and allows the use of the table within the databse for the vending machine program.
+cursor = conn.cursor()
+
+def sales_data(Item, Price, QtySold): # This updates the database table on how much each of the product have been sold.
+   cursor.execute('INSERT INTO Items (Item, Price, QtySold) VALUES (?, ?, ?)',
+               (Item, Price, QtySold))
+   conn.commit()
+
+items = { #This is the menu of my vending machine. It includes the item code, item name, and item price.
+    "A1": ("Candy", 2.00),
+    "A2": ("Juice", 3.50),
+    "A3": ("Pepsi", 5.00),
+    "B1": ("Coca-Cola", 5.00),
+    "B2": ("Sprite", 5.00),
+    "B3": ("Protein Bar", 4.50),
+    "C1": ("M&M", 3.00),
+    "C2": ("Oreos", 3.00),
+    "C3": ("Water", 3.00),
+}                  
+
+def displayitems(): # We defined this function so that whenever we need to display the menu, we can just call this function to be able to display the menu.
+    print("\n" + "-" * 30)
+    print("       WELCOME TO THE VENDING MACHINE       ")
+    print("-" * 30)
+    print(f"{'Code'.ljust(5)} | {'Item Name'.ljust(15)} | {'Price (AED)'}")
+    print("-" * 30)
+    for code, details in items.items():
+        snack, price = details
+        print(f"{code.ljust(5)} | {snack.ljust(15)} | {price:.2f}")
+    print("-" * 30 + "\n")
+    speak("Please select an item")
+       
+def vending_machine(): # This is the main defined function that handles all the process behind the program.
+    while True: # This while loop ensures that only 2 choices are selected.
+        displayitems()
+        choice = input("Please select what you would like to buy, or select the num 0 if you want to cancel. ").upper().strip()
+        
+        if choice not in items: # This function is for when none of the valid choice were picked.
+            print("Hmm, That doesn't seem right. Try Again Please.") # It then prints this string.
+            playsound("C:\\Users\Zyle\Desktop\Assesment 2 Vending Machine\mixkit-wrong-electricity-buzz-955.wav")
+        else: # If it the user picks
+            snack, price = items[choice]
+            try:
+                money = float(input(f"Nice Pick! Insert the appropriate amount of money to proceed, {price:.2f} AED: "))
+                if money >= price:
+                    quantity = 1 
+                    change = money - price
+                    playsound("C:\\Users\Zyle\Desktop\Assesment 2 Vending Machine\mixkit-gold-coin-prize-1999.wav")
+                    
+                    print(f"Thank you! Your change would be {change:.2f}")
+                    speak(f"Thank you for Purchasing! Your change would be {change} AED")
+                    sales_data(snack, price, quantity)
+                else:
+                    print(f"Insufficient money. {snack} cost {price:.2f} AED.")
+                    playsound("C:\\Users\Zyle\Desktop\Assesment 2 Vending Machine\mixkit-wrong-electricity-buzz-955.wav")
+            except ValueError:
+                print("Invalid Input. Please enter a valid number.")
+                playsound("C:\\Users\Zyle\Desktop\Assesment 2 Vending Machine\mixkit-wrong-electricity-buzz-955.wav")
+                
+        repeat = input("Would you like to buy something else? (yes/no): ").lower().strip()
+        if repeat != "yes":
+            print("Thank you for using the vending machine. Have a great day!")
+            speak("Thank you for using the vending machine. Have a great day!")
+            break
+            
+vending_machine() 
+conn.close()           
